@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <time.h>
 #include <stdbool.h>
+#include <unistd.h>
 
 #define UP 0     //-y
 #define DOWN 1   //+y
@@ -19,10 +20,11 @@
 //#define prim    //enable this to generate mazes using prim's algorithm.
 #define backtrack//enable this to generate mazes using depth-first search. Don't enable both.
 //#define movie   //this option spams bitmaps to illustrate each step of generation.
+#define prim //enable this to generate mazes using prim's algorithm.
 
 long numin=1;     //Number of cells in the maze.
-#define xsize 3000
-#define ysize 3000
+#define xsize 5
+#define ysize 5
 
 void initialize();
 void generate();
@@ -32,12 +34,23 @@ struct cell{
 	bool in;  //Is this cell in the maze?
 	bool up;  //Does the wall above this cell exist?
 	bool left;//Does the wall to the left of this cell exist?
+	bool visited; //Has this cell been visited?
 	int prevx, prevy; //The coordinates of the previous cell, used for backtracking.
 };
 
 struct cell MAZE[xsize][ysize];
 
-void traverse();
+// void traverse();
+
+int *get_start_point();
+
+int *get_destination();
+
+void traverse(int x1, int y1, int x2, int y2);
+
+bool within_bounds(int x, int y);
+
+void display_maze();
 
 int main(){
 	srand((unsigned int)time(NULL)); //seed random number generator with system time
@@ -52,13 +65,116 @@ int main(){
 
 	savebmp(0,0);
 
-    traverse();
+    int *start = get_start_point();
+
+    printf("start: (%d %d)\n", start[0], start[1]);
+
+    int *destination = get_destination();
+
+	printf("destination: (%d %d)\n", destination[0], destination[1]);
+
+    traverse(start[0], start[1], destination[0], destination[1]);
+
+    // printf("done\n");
 
 	return 0;
 }
 
-void traverse(){
-    // function to traverse the maze and draw the path in blue on the bmp
+void display_maze(){
+	for (int i = 0; i < xsize; i++){
+		for (int j = 0; j < ysize; j++){
+			// printf("%d", MAZE[i][j].in);
+			// if (MAZE[i][j].in){
+			// 	if (MAZE[i][j].visited){
+			// 		printf("*");
+			// 	} else {
+			// 		printf(" ");
+			// 	}
+			// } else {
+			// 	printf("#");
+			// }
+		}
+		printf("\n");
+	}
+}
+
+bool within_bounds(int x, int y){
+	return (x >= 0 && x < xsize && y >= 0 && y < ysize && MAZE[x][y].in && !MAZE[x][y].visited);
+}
+
+void traverse(int x1, int y1, int x2, int y2){
+    if (x1 == x2 && y1 == y2){
+        printf("Done!\n");
+        return;
+    } else {
+        if (!within_bounds(x1, y1)){
+            return;
+        } else {
+            sleep(3);
+			// display_maze();
+			printf("(%d %d)\n", x1, y1);
+			printf("%d\n", MAZE[x1][y1].in);
+			MAZE[x1][y1].visited = true;
+			for (int i = 0; i < 4; i++){
+				printf("I: %d\n", i);
+				switch(i){
+					case UP:
+						// printf("UP\n");
+						traverse(x1, y1 + 1, x2, y2);
+						break;
+					case LEFT:
+						// printf("LEFT\n");
+						traverse(x1 - 1, 1, x2, y2);
+						break;
+					case DOWN:
+						// printf("DOWN\n");
+						traverse(x1, y1 - 1, x2, y2);
+						break;
+					case RIGHT:
+						// printf("RIGHT\n");
+						traverse(x1 + 1, y1, x2, y2);
+						break;
+				}
+				sleep(3);
+			}
+
+        }
+    }
+
+}
+
+int *get_destination(){
+    int* destination = malloc(2 * sizeof(int));
+
+    bool within_bounds = false;
+
+    while (!within_bounds) {
+        destination[0] = rand() % xsize;
+        destination[1] = rand() % ysize;
+
+        if (MAZE[destination[0]][destination[1]].in) {
+            within_bounds = true;
+        }
+    }
+
+    return destination;
+}
+
+int *get_start_point(){
+    int* start = malloc(2 * sizeof(int));
+
+    bool within_bounds = false;
+
+    while (!within_bounds) {
+        start[0] = rand() % xsize;
+        start[1] = rand() % ysize;
+
+        if (MAZE[start[0]][start[1]].in) {
+            within_bounds = true;
+        }
+    }
+
+    return start;
 }
 
 void initialize(){
@@ -70,6 +186,7 @@ void initialize(){
 			//All maze cells have all walls existing by default, except the perimeter cells.
 			MAZE[x][y].up   = (x==0||x==xsize-1||y==0)?0:1;
 			MAZE[x][y].left = (x==0||y==0||y==ysize-1)?0:1;
+			MAZE[x][y].visited = false;
 		}
 	}
 	return;
