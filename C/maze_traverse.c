@@ -29,7 +29,8 @@ void savebmp(int xspecial, int yspecial);
 void displaymaze();
 int *get_start_point();
 int *get_destination();
-void traverseMaze(int x, int y);
+void traverseMaze(int x, int y, int dx, int dy);
+bool within_bounds(int x, int y);
 
 struct cell{
     char type; // determines maze type.
@@ -38,6 +39,9 @@ struct cell{
 	bool left;//Does the wall to the left of this cell exist?
 	int prevx, prevy; //The coordinates of the previous cell, used for backtracking.
 };
+
+int start_x;
+int start_y;
 
 struct cell MAZE[xsize][ysize];
 
@@ -55,6 +59,17 @@ int main(){
 
     displaymaze();
 
+    int *start = get_start_point();
+
+    start_x = start[0];
+    start_y = start[1];
+
+    int *dest = get_destination();
+
+    traverseMaze(start[0], start[1], dest[0], dest[1]);
+
+    printf("SUCCESSFULLY TRAVERSED MAZE!\n");
+
 	return 0;
 }
 
@@ -67,7 +82,7 @@ int *get_destination(){
         destination[0] = rand() % xsize;
         destination[1] = rand() % ysize;
 
-        if (MAZE[destination[0]][destination[1]].in) {
+        if (MAZE[destination[0]][destination[1]].type == ' ') {
             within_bounds = true;
         }
     }
@@ -84,7 +99,7 @@ int *get_start_point(){
         start[0] = rand() % xsize;
         start[1] = rand() % ysize;
 
-        if (MAZE[start[0]][start[1]].in) {
+        if (MAZE[start[0]][start[1]].type == ' ') {
             within_bounds = true;
         }
     }
@@ -92,8 +107,38 @@ int *get_start_point(){
     return start;
 }
 
-void traverseMaze(int x, int y){
+bool within_bounds(int x, int y){
+	return (x >= 0 && x < xsize && y >= 0 && y < ysize && MAZE[x][y].type == ' ');
+}
 
+void traverseMaze(int x, int y, int dx, int dy){
+
+    if (x == start_x && y == start_y) {
+        MAZE[x][y].type = 'S';
+    } else {
+        MAZE[x][y].type = '-';
+    }
+    
+    if (x == dx && y == dy){
+        MAZE[x][y].type = 'D';
+        displaymaze();
+    } else {
+        if (within_bounds(x + 1, y)){
+            traverseMaze(x + 1, y, dx, dy);
+        }
+
+        if (within_bounds(x - 1, y)){
+            traverseMaze(x - 1, y, dx, dy);
+        }
+
+        if (within_bounds(x, y + 1)){
+            traverseMaze(x, y + 1, dx, dy);
+        }
+
+        if (within_bounds(x, y - 1)){
+            traverseMaze(x, y - 1, dx, dy);
+        }
+    }
 }
 
 void initialize(){
